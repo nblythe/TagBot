@@ -1,0 +1,209 @@
+; Processor definitions for the Analog Devices ADuC841
+; 2009 Nathan Blythe
+;
+
+; Disable built-in definitions.
+;
+$NOMOD51
+
+
+; Disable listings (will re-enable at the end of this file).
+;
+$NOLIST
+
+
+; Special function registers.
+;
+P0          DATA      080H  ; Port 0.  Default value 0xFF.  Bit addressable.
+SP          DATA      081H  ; Stack pointer.  Default value 0x07.
+DPL         DATA      082H  ; Data pointer low address byte.  Default value 0x00.
+DPH         DATA      083H  ; Data pointer high address byte.  Default value 0x00.
+DPP         DATA      084H  ; Data pointer access.
+PCON        DATA      087H  ; Power control and general purpose status flags.  Default value 0x00.
+TCON        DATA      088H  ; Timer 0, 1 control.  Default value 0x00.  Bit addressable (see below).
+  IT0       BIT       088H
+  IE0       BIT       089H
+  IT1       BIT       08AH
+  IE1       BIT       08BH
+  TR0       BIT       08CH
+  TF0       BIT       08DH
+  TR1       BIT       08EH
+  TF1       BIT       08FH
+TMOD        DATA      089H  ; Timer 0, 1 modes.  Default value 0x00.
+TL0         DATA      08AH  ; Low byte for timer/counter 0.  Default value 0x00.
+TL1         DATA      08BH  ; Low byte for timer/counter 1.  Default value 0x00.
+TH0         DATA      08CH  ; High byte for timer/counter 0.  Default value 0x00.
+TH1         DATA      08DH  ; High byte for timer/counter 1.  Default value 0x00.
+P1          DATA      090H  ; Port 1.  Default value 0xFF.  Bit addressable (see below).
+  T2        BIT       090H
+  ADC0      BIT       090H
+  T2EX      BIT       091H
+  ADC1      BIT       091H
+  ADC2      BIT       092H
+  ADC3      BIT       093H
+  ADC4      BIT       094H
+  ADC5      BIT       095H
+  SS        BIT       095H
+  ADC6      BIT       096H
+  ADC7      BIT       097H
+I2CADD1     DATA      091H  ; Second I2C peripheral address.  Default value 0x7F.
+I2CADD2     DATA      092H  ; Third I2C peripheral address.  Default value 0x7F.
+I2CADD3     DATA      093H  ; Fourth I2C peripheral address.  Default value 0x7F.
+SCON        DATA      098H  ; Serial port control.  Default value 0x00.  Bit addressable (see below).
+  RI        BIT       098H
+  TI        BIT       099H
+  RB8       BIT       09AH
+  TB8       BIT       09BH
+  REN       BIT       09CH
+  SM2       BIT       09DH
+  SM1       BIT       09EH
+  SM0       BIT       09FH
+SBUF        DATA      099H  ; Serial port buffer access.
+I2CDAT      DATA      09AH  ; I2C bus access.
+I2CADD      DATA      09BH  ; First I2C peripheral address.  Default value 0x55.
+T3FD        DATA      09DH  ; Timer 3 fractional divide ratio.  Default value 0x00.
+T3CON       DATA      09EH  ; Timer 3 control.  Default value 0x00.
+P2          DATA      0A0H  ; Port 2.  Default value 0xFF.  Bit addressable (see below).
+  PWM0      BIT       0A6H
+  PWM1      BIT       0A7H
+TIMECON     DATA      0A1H  ; Timer Interval Counter (TIC) control.  Default value 0x00.
+HTHSEC      DATA      0A2H  ; 1/128 second counter.  Default value 0x00.
+SEC         DATA      0A3H  ; 1 second counter.  Default value 0x00.
+MIN         DATA      0A4H  ; 1 minute counter.  Default value 0x00.
+HOUR        DATA      0A5H  ; 1 hour counter.  Default value 0x00.
+INTVAL      DATA      0A6H  ; Interval after which to TIC interrupt.  Default value 0x00.
+DPCON       DATA      0A7H  ; Data pointer control.  Default value 0x00.
+IE          DATA      0A8H  ; Interrupt enables.  Default value 0x00.  Bit addressable (see below).
+  EX0       BIT       0A8H
+  ET0       BIT       0A9H
+  EX1       BIT       0AAH
+  ET1       BIT       0ABH
+  ES        BIT       0ACH
+  ET2       BIT       0ADH
+  EADC      BIT       0AEH
+  EA        BIT       0AFH
+IEIP2       DATA      0A9H  ; Secondary interrupt enables and priorities.  Default value 0xA0.
+PWMCON      DATA      0AEH  ; PWM control.  Default value 0x00.
+CFG841      DATA      0AFH  ; ADuC841 special configuration.  Default value 0x10.
+P3          DATA      0B0H  ; Port 3.  Default value 0xFF.  Bit addressable.
+  RXD       BIT       0B0H
+  TXD       BIT       0B1H
+  INT0      BIT       0B2H
+  INT1      BIT       0B3H
+  MISO      BIT       0B3H  ; Also used as PWM1.
+  T0        BIT       0B4H
+  PWMC      BIT       0B4H  ; Also used as PWM0.
+  T1        BIT       0B5H
+  CONVST    BIT       0B5H
+  WR        BIT       0B6H
+  RD        BIT       0B7H
+PWM0L       DATA      0B1H  ; PWM 0 low time.  Default value 0x00.
+PWM0H       DATA      0B2H  ; PWM 0 high time.  Default value 0x00.
+PWM1L       DATA      0B3H  ; PWM 1 low time.  Default value 0x00.
+PWM1H       DATA      0B4H  ; PWM 1 high time.  Default value 0x00.
+SPH         DATA      0B7H  ; Extend stack pointer to 11 bits.  Default value 0x00.
+IP          DATA      0B8H  ; Interrupt priorities.  Default value 0x00.  Bit addressable (see below).
+  PX0       BIT       0B8H
+  PT0       BIT       0B9H
+  PX1       BIT       0BAH
+  PT1       BIT       0BBH
+  PS        BIT       0BCH
+  PT2       BIT       0BDH
+  PADC      BIT       0BEH
+ECON        DATA      0B9H  ; Flash memory control.  Default value 0x00.
+EDATA1      DATA      0BCH  ; Flash memory page byte 0.
+EDATA2      DATA      0BDH  ; Flash memory page byte 1.
+EDATA3      DATA      0BEH  ; Flash memory page byte 2.
+EDATA4      DATA      0BFH  ; Flash memory page byte 3.
+WDCON       DATA      0C0H  ; Watchdog timer control.  Default value 0x10.  Bit addressable (see below).
+  WDWR      BIT       0C0H
+  WDE       BIT       0C1H
+  WDS       BIT       0C2H
+  WDIR      BIT       0C3H
+  PRE0      BIT       0C4H
+  PRE1      BIT       0C5H
+  PRE2      BIT       0C6H
+  PRE3      BIT       0C7H
+CHIPID      DATA      0C2H  ; Chip ID.
+EADRL       DATA      0C6H  ; Flash memory address low byte.
+EADRH       DATA      0C7H  ; Flash memory address high byte.
+T2CON       DATA      0C8H  ; Timer 2 control.  Default value 0x00.  Bit addressable (see below).
+  CAP2      BIT       0C8H
+  CNT2      BIT       0C9H
+  TR2       BIT       0CAH
+  EXEN2     BIT       0CBH
+  TCLK      BIT       0CCH
+  RCLK      BIT       0CDH
+  EXF2      BIT       0CEH
+  TF2       BIT       0CFH
+RCAP2L      DATA      0CAH  ; Timer 2 capture/reload time low byte.  Default value 0x00.
+RCAP2H      DATA      0CBH  ; Timer 2 capture/reload time high byte.  Default value 0x00.
+TL2         DATA      0CCH  ; Timer 2 value low byte.
+TH2         DATA      0CDH  ; Timer 2 value high byte.
+PSW         DATA      0D0H  ; Program status word.  Default value 0x00.  Bit addressable (see below).
+  P         BIT       0D0H
+  F1        BIT       0D1H
+  OV        BIT       0D2H
+  RS0       BIT       0D3H
+  RS1       BIT       0D4H
+  F0        BIT       0D5H
+  AC        BIT       0D6H
+  CY        BIT       0D7H
+DMAL        DATA      0D2H  ; Direct memory access address low byte.  Default value 0x00.
+DMAH        DATA      0D3H  ; Direct memory access address high byte.  Default value 0x00.
+DMAP        DATA      0D4H  ; Direct memory access pointer.
+PLLCON      DATA      0D7H  ; Phase lock loop control.  Default value 0x53.
+ADCCON2     DATA      0D8H  ; ADC control (part 2).  Default value 0x00.  Bit addressable (see below).
+  CS0       BIT       0D8H
+  CS1       BIT       0D9H
+  CS2       BIT       0DAH
+  CS3       BIT       0DBH
+  SCONV     BIT       0DCH
+  CCONV     BIT       0DDH
+  DMA       BIT       0DEH
+  ADCI      BIT       0DFH
+ADCDATAL    DATA      0D9H  ; ADC data low byte.
+ADCDATAH    DATA      0DAH  ; ADC data high byte.
+PSMCON      DATA      0DFH  ; Power supply monitor control.  Default value 0xDE.
+ACC         DATA      0E0H  ; Accumulator.  Default value 0x00.  Bit addressable.
+I2CCON      DATA      0E8H  ; I2C control.  Default value 0x00.  Bit addressable (see below).
+  I2CI      BIT       0E8H
+  I2CTX     BIT       0E9H
+  I2CRS     BIT       0EAH
+  I2CM      BIT       0EBH
+  MDI       BIT       0ECH
+  I2CID0    BIT       0ECH
+  MCO       BIT       0EDH
+  I2CID1    BIT       0EDH
+  MDE       BIT       0EEH
+  I2CGC     BIT       0EEH
+  MDO       BIT       0EFH
+  I2CSI     BIT       0EFH
+ADCCON1     DATA      0EFH  ; ADC control (part 1).  Default value 0x40.
+B           DATA      0F0H  ; B register.  Default value 0x00.  Bit addressable.
+ADCOFSL     DATA      0F1H  ; ADC offset calibration component low byte.  Default value 0x00.
+ADCOFSH     DATA      0F2H  ; ADC offset calibration component high byte.  Default value 0x00.
+ADCGAINL    DATA      0F3H  ; ADC gain low byte.  Default value 0x00.
+ADCGAINH    DATA      0F4H  ; ADC gain high byte.  Default value 0x00.
+ADCCON3     DATA      0F5H  ; ADC control (part 3).  Default value 0x00.
+SPIDAT      DATA      0F7H  ; SPI bus access.
+SPICON      DATA      0F8H  ; SPI control.  Default value 0x04.  Bit addressable (see below)
+  SPR0      BIT       0F8H
+  SPR1      BIT       0F9H
+  CPHA      BIT       0FAH
+  CPOL      BIT       0FBH
+  SPIM      BIT       0FCH
+  SPE       BIT       0FDH
+  WCOL      BIT       0FEH
+  ISPI      BIT       0FFH
+DAC0L       DATA      0F9H  ; DAC 0 value low byte.  Default value 0x00.
+DAC0H       DATA      0FAH  ; DAC 0 value high byte.  Default value 0x00.
+DAC1L       DATA      0FBH  ; DAC 1 value low byte.  Default value 0x00.
+DAC1H       DATA      0FCH  ; DAC 1 value high byte.  Default value 0x00.
+DACCON      DATA      0FDH  ; DAC control.  Default value 0x04.
+
+
+; Enable listings.
+;
+$LIST
+
