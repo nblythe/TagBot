@@ -9,3 +9,6 @@ install: test
 clean:
 	rm -f *.hex *.lst
 
+push:
+	git push git@github.com:nblythe/TagBot.git master
+
