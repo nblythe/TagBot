@@ -11,8 +11,8 @@ $INCLUDE (ADuC841.mcu)
 ; Reset vector.
 ;
 CSEG at 00000H
-Reset:
-  ljmp Main
+  VecReset:
+    ljmp Main
 
 
 ; External interrupt 0 vector.
@@ -21,19 +21,19 @@ Reset:
 ; until the INT0/ button is released before returning.
 ;
 CSEG at 00003H
-Button:
-  push ACC
-  mov A, R1
-  clr C
-  subb A, #008H
-  jnz Button_0
-  mov A, #040H
-Button_0:
-  mov R1, A
-  pop ACC
-Button_1:
-  jnb P3.2, Button_1
-  reti
+  Button:
+    push ACC
+    mov A, R1
+    clr C
+    subb A, #008H
+    jnz Button_0
+    mov A, #040H
+  Button_0:
+    mov R1, A
+    pop ACC
+  Button_1:
+    jnb P3.2, Button_1
+    reti
 
 
 ; Main entry point.
@@ -43,15 +43,15 @@ Button_1:
 ; LED with a call to Delay after each toggle.
 ;
 CSEG at 00100H
-Main:
-  mov R1, #040H
-  mov IE, #10000001b
-Loop:
-  clr  P3.4
-  call Delay
-  setb P3.4
-  call Delay
-  sjmp Loop
+  Main:
+    mov R1, #040H
+    mov IE, #10000001b
+  Loop:
+    clr  P3.4
+    call Delay
+    setb P3.4
+    call Delay
+    sjmp Loop
 
 
 ; Delay some human-detectable amount of time.
@@ -65,20 +65,20 @@ Loop:
 ; Mangles:
 ;   A, B, R0
 ;
-Delay:
-  mov A, R1
-  mov R0, A
-Delay_0:
-  mov B, #0FFH
-Delay_1:
-  mov  A, #0FFH
-Delay_2:
-  djnz ACC, Delay_2
-  djnz B, Delay_1
-  dec R0
-  mov A, R0
-  jnz Delay_0
-  ret
+  Delay:
+    mov A, R1
+    mov R0, A
+  Delay_0:
+    mov B, #0FFH
+  Delay_1:
+    mov  A, #0FFH
+  Delay_2:
+    djnz ACC, Delay_2
+    djnz B, Delay_1
+    dec R0
+    mov A, R0
+    jnz Delay_0
+    ret
 
 
 END

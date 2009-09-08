@@ -2,10 +2,7 @@
 ; 2009 Nathan Blythe
 ;
 
-; Disable built-in definitions.
-;
 $NOMOD51
-
 
 ; Disable listings (will re-enable at the end of this file).
 ;
