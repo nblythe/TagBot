@@ -303,10 +303,10 @@ UsedLibrary="/opt/eagle-5.6.0/lbr/zilog.lbr"
 
 [Win_1]
 Type="Control Panel"
-Loc="168 262 1011 834"
+Loc="119 68 794 403"
 State=2
 Number=0
 
 [Desktop]
-Screen="1280 1024"
+Screen="1024 600"
 Window="Win_1"
