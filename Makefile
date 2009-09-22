@@ -1,6 +1,6 @@
 AS=asem
 
-all: test pwm
+all: test pwm states
 
 test: test.a51
 	$(AS) test.a51
@@ -8,8 +8,11 @@ test: test.a51
 pwm: pwm.a51
 	$(AS) pwm.a51
 
-install: pwm
-	./aduc8xx.pl --port /dev/ttyUSB0 --detect --echip --program pwm.hex
+states: states.a51
+	$(AS) states.a51
+
+install: states
+	./aduc8xx.pl --port /dev/ttyUSB0 --detect --echip --program states.hex
 
 clean:
 	rm -f *.hex *.lst
