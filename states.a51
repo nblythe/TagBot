@@ -4,6 +4,7 @@
 
 
 $INCLUDE (ADuC841.mcu)
+$INCLUDE (loco.inc)
 
 ; Configuration.
 ;
@@ -16,7 +17,10 @@ DRIVE_TIME    EQU 5
 ; State variables.
 ;
 BSEG
-  State_mode:      dbit 1
+  State_modeFlag:  dbit 1
+  State_toFlag:    dbit 1
+  State_colFlag:   dbit 1
+
   State_adc0valid: dbit 1
   State_adc1valid: dbit 1
 DSEG
@@ -60,16 +64,7 @@ CSEG at 00000H
 ; TIC tocked.
 ;
   TIC:
-    jnb P3.4, TIC_turnOff
-    clr P3.4
-    reti
-  TIC_turnOFF:
-    setb P3.4
-
-    push ACC
-    mov A, #005H
-    call TIC_Start
-    pop ACC
+    setb State_toFlag
     reti
 
 
@@ -81,100 +76,100 @@ CSEG at 00000H
     mov IE,    #10000000b
     mov IEIP2, #00000100b
 
-    mov A, #005H
-    call TIC_Start
+    call locoInit
 
-  Loop:
-    sjmp Loop
+    ;mov A, #005H
+    ;call TIC_Start
 
-
-; State: Drive
-; Action: enter
-;
-  State_Drive_Enter:
-    push ACC
-
-    mov A, #DRIVE_SPEED_F
-    jnb 
+    ljmp Drive
 
 
-; Start the TIC counting a certain number of seconds.
-;
-; Takes:
-;   A: number of seconds the TIC should count.
-;
-; Returns:
-;   Nothing
-;
-; Mangles:
-;   Nothing
-;
-; Notes:
-;   "Seconds" are used as the interval timebase.
-;   Single-shot timer (no auto-restart).
-;
-;   See page 55 in the documentation.
-;
-  TIC_Start:
-    push ACC
 
-  ; Disable the TIC and reset current time interval.
+; "Drive" state
+;
+  Drive:
+  ; Offensive: drive forwards.
+  ; Defensive: drive reverse.
   ;
-    mov TIMECON, #00000000b
-    call TIC_Safety
-    mov HTHSEC,  #00H
-    call TIC_Safety
-    mov SEC,     #00H
-    call TIC_Safety
-    mov MIN,     #00H
-    call TIC_Safety
-    mov HOUR,    #00H
-    call TIC_Safety
+    mov A, #LOCO_DRIVE_F
+    jnb State_modeFlag, Drive_Start
+    mov A, #LOCO_DRIVE_R
+  Drive_Start:
+    call locoState
 
-  ; Set the counter limit.
+  ; Start the timer.
   ;
-    mov INTVAL, A
-    call TIC_Safety
+    clr State_toFlag
+    mov A, #DRIVE_TIME
+    call ticStart
 
-  ; Enable the TIC.
+  ; Wait until either the time expires or a collision
+  ; occurs.
   ;
-    mov TIMECON, #00010011b
-    call TIC_Safety
+    clr State_colFlag
+  Drive_Wait:
+    jb State_toFlag, Drive_Done
+    jb State_colFlag, Drive_Collision
+    sjmp Drive_Wait
 
-  ; All done.
+  ; Time expired.  Stop the drive motor and switch
+  ; to the "Scan" state.
   ;
-    pop ACC
-    ret
+  Drive_Done:
+    mov A, #LOCO_STOP
+    call locoState
+    ljmp Scan
+
+  ; Interrupted by a collision.  Stop the drive motor,
+  ; cancel the timer, and switch to the "Bus Detect" state.
+  ;
+  Drive_Collision:
+    mov A, #LOCO_STOP
+    call locoState
+    call ticStop
+    ljmp BusDetect
 
 
-  TIC_Safety:
-    push ACC
-    push B
-    mov A, #002H
-  TIC_Safety_0:
-    mov B, #0FFH
-  TIC_Safety_1:
-    djnz B, TIC_Safety_1
-    djnz ACC, TIC_Safety_0
-    pop B
-    pop ACC
-    ret
+; "Scan" state
+;
+; TODO
+;
+  Scan:
+    sjmp Scan
 
 
-; Reset the TIC interrupt.
+; "Bus Detect" state
 ;
-; Takes:
-;   Nothing
+; TODO
 ;
-; Returns:
-;   Nothing
+  BusDetect:
+    sjmp BusDetect
+
+
+; "Seperate" state
 ;
-; Mangles:
-;   Nothing
+; TODO
 ;
-  TIC_Reset:
-    mov TIMECON, #00000000b
-    ret
+  Seperate:
+    sjmp Seperate
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$INCLUDE(loco.a51)
+$INCLUDE(tic.a51)
+
 
 
 END
