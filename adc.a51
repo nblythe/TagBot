@@ -12,6 +12,9 @@
 ;   adcValid:  Flag indicating that the ADC value is now valid.
 ;   adcValue:  Last read value of the ADC.
 ;
+; Overview:
+;   TODO
+;
 
 
 ; ADC channels.

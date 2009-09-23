@@ -8,6 +8,10 @@
 ;
 ; Public variables:
 ;   ticTock:   Flag indicating that the TIC has tocked.
+;
+; Overview:
+;   TODO
+;
 
 
 ; TIC bits.

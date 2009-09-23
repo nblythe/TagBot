@@ -1,29 +1,31 @@
-; State machine test
+; Auto-Tag 
 ; 2009 Nathan Blythe
+;
+; Overview:
+;   TODO
 ;
 
 
 $INCLUDE (ADuC841.mcu)
 
 
-; Configuration.
+; Configuration constants.
 ;
-DRIVE_TIME    EQU 2
-SCAN_TIME     EQU 5
-SCAN_THRESH   EQU 080H
-SCAN_DELTA    EQU 010H
+DRIVE_TIME    EQU 5
+SCAN_TIME     EQU 2
+SCAN_THRESH   EQU 0A0H
+SCAN_DELTA    EQU 020H
 
 
 ; State variables.
 ;
 BSEG
-  flagMode:  dbit 1
-
+  flagMode:    dbit 1
 DSEG
-  StateL:          ds   1
-  StateH:          ds   1
-  State_adc0:      ds   1
-  State_adc1:      ds   1
+  StateL:      ds   1
+  StateH:      ds   1
+  State_adc0:  ds   1
+  State_adc1:  ds   1
 
 
 ; Interrupt vector table.
@@ -57,8 +59,6 @@ CSEG at 00000H
     reti
 
 
-
-
 ; Firmware entry point at reset.
 ;
 ;
@@ -68,7 +68,7 @@ CSEG at 00000H
     mov IE,    #11000000b
     mov IEIP2, #00000100b
 
-  ; TODO - init from pin.
+  ; TODO - init mode from GPIO.
   ;
     clr flagMode
 
@@ -78,7 +78,7 @@ CSEG at 00000H
     call adcInit
 
   ; Start in scan state.
-  ; TODO
+  ;
     ljmp Scan
 
 

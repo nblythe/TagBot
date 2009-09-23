@@ -5,6 +5,9 @@
 ;   locoInit:  Initialize the locomotion system.
 ;   locoState: Set the state of the locomotion system.
 ;
+; Overview:
+;   TODO
+;
 
 
 ; Locomotion states.
