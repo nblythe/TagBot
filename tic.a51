@@ -4,7 +4,21 @@
 ; Public routines:
 ;   ticStart:  Start the TIC counting for a certain number of seconds.
 ;   ticStop:   Stop the TIC counter, whatever it's doing.
+;   ticISR:    TIC interrupt service routine.
 ;
+; Public variables:
+;   ticTock:   Flag indicating that the TIC has tocked.
+
+
+; TIC bits.
+;
+BSEG
+  ticTock: dbit 1
+
+
+; Routines follow.
+;
+CSEG
 
 
 ; Start the TIC counting for a certain number of seconds.
@@ -44,6 +58,10 @@
   ;
     mov INTVAL, A
     call ticSafety
+
+  ; Reset the event flag.
+  ;
+    clr ticTock
 
   ; Enable the TIC.
   ;
@@ -99,4 +117,11 @@
     pop B
     pop ACC
     ret
+
+
+; TIC interrupt service routine.
+;
+  ticISR:
+    setb ticTock
+    reti
 

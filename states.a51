@@ -4,25 +4,21 @@
 
 
 $INCLUDE (ADuC841.mcu)
-$INCLUDE (loco.inc)
+
 
 ; Configuration.
 ;
-DRIVE_SPEED_F EQU 255
-DRIVE_SPEED_R EQU 0
-DRIVE_TIME    EQU 5
-
+DRIVE_TIME    EQU 2
+SCAN_TIME     EQU 5
+SCAN_THRESH   EQU 080H
+SCAN_DELTA    EQU 010H
 
 
 ; State variables.
 ;
 BSEG
-  State_modeFlag:  dbit 1
-  State_toFlag:    dbit 1
-  State_colFlag:   dbit 1
+  flagMode:  dbit 1
 
-  State_adc0valid: dbit 1
-  State_adc1valid: dbit 1
 DSEG
   StateL:          ds   1
   StateH:          ds   1
@@ -33,7 +29,7 @@ DSEG
 ; Interrupt vector table.
 ;
 CSEG at 00000H
-    ljmp Main             ; Reset
+    ljmp Reset
     ljmp Stub             ; External interrupt 0
     ds   5
     ljmp Stub             ; Timer 0
@@ -46,43 +42,44 @@ CSEG at 00000H
     ds   5
     ljmp Stub             ; Timer 2
     ds   5
-    ljmp Stub             ; ADC
+    ljmp adcISR           ; ADC
     ds   5
     ljmp Stub             ; SPI, I2C
     ds   5
     ljmp Stub             ; Power supply monitor
     ds   5
-    ljmp Stub             ; Unused.
+    ljmp Stub             ; Reserved
     ds   5
-    ljmp TIC              ; Timer interval counter
+    ljmp ticISR           ; Timer interval counter
     ds   5
     ljmp Stub             ; Watchdog timer
   Stub:
     reti
 
 
-; TIC tocked.
-;
-  TIC:
-    setb State_toFlag
-    reti
 
 
-
-; Main entry point.
+; Firmware entry point at reset.
 ;
 ;
-  Main:
-    mov IE,    #10000000b
+  Reset:
+  ; Enable ADC, TIC interrupts.
+  ;
+    mov IE,    #11000000b
     mov IEIP2, #00000100b
 
+  ; TODO - init from pin.
+  ;
+    clr flagMode
+
+  ; Initialize firmware components.
+  ;
     call locoInit
+    call adcInit
 
-    ;mov A, #005H
-    ;call TIC_Start
-
-    ljmp Drive
-
+  ; Start in scan state.
+  ; TODO
+    ljmp Scan
 
 
 ; "Drive" state
@@ -92,24 +89,23 @@ CSEG at 00000H
   ; Defensive: drive reverse.
   ;
     mov A, #LOCO_DRIVE_F
-    jnb State_modeFlag, Drive_Start
+    jnb flagMode, Drive_Start
     mov A, #LOCO_DRIVE_R
   Drive_Start:
     call locoState
 
   ; Start the timer.
   ;
-    clr State_toFlag
     mov A, #DRIVE_TIME
     call ticStart
 
   ; Wait until either the time expires or a collision
-  ; occurs.
+  ; occurs.  TODO
   ;
-    clr State_colFlag
+    ;clr State_colFlag
   Drive_Wait:
-    jb State_toFlag, Drive_Done
-    jb State_colFlag, Drive_Collision
+    jb ticTock, Drive_Done
+    ;jb State_colFlag, Drive_Collision
     sjmp Drive_Wait
 
   ; Time expired.  Stop the drive motor and switch
@@ -132,10 +128,73 @@ CSEG at 00000H
 
 ; "Scan" state
 ;
-; TODO
-;
   Scan:
-    sjmp Scan
+    clr P3.4
+
+  ; Initialize the threshold scan value.
+  ;
+    mov B, #SCAN_THRESH
+
+  ; Offensive: listen to the defensive microphone input.
+  ; Defensive: listen to the offensive microphone input.
+  ;
+    mov A, #ADC_MIC_DEFENSIVE
+    jnb flagMode, Scan_Start
+    mov A, #ADC_MIC_OFFENSIVE
+  Scan_Start:
+    call adcStart
+
+  ; Wait until we start getting valid results.
+  ;
+  Scan_WaitValid:
+    jnb adcValid, Scan_WaitValid
+
+  ; Start turning in a circle.
+  ;
+  ; TODO: pick direction randomly.
+  ;
+    mov A, #LOCO_SPIN_L
+    call locoState
+
+  ; Scan loop.  On each iteration we run the timer and
+  ; watch the scan values while we wait for it to finish.
+  ; If the scan value exceeds the threshold we stop.  If
+  ; the timer runs out we decrease the threshold and try
+  ; again.
+  ;
+  ; TODO: collisions!
+  ;
+  Scan_Loop:
+    mov A, #SCAN_TIME
+    call ticStart
+  ;
+  Scan_LoopWait:
+    jb ticTock, Scan_LoopWaitTO
+  ;
+    mov A, adcValue
+    clr C
+    subb A, B
+    jnc Scan_Done
+  ;
+    sjmp Scan_LoopWait
+  ;
+  Scan_LoopWaitTO:
+    mov A, B
+    clr C
+    subb A, #SCAN_DELTA
+    mov B, A
+    jnc Scan_Loop
+    mov B, #000H
+    sjmp Scan_Loop
+
+  ; Threshold exceeded.  Stop turning, stop the timer,
+  ; and switch to the "Drive" state.
+  ;
+  Scan_Done:
+    mov A, #LOCO_STOP
+    call locoState
+    call ticStop
+    ljmp Drive
 
 
 ; "Bus Detect" state
@@ -154,22 +213,11 @@ CSEG at 00000H
     sjmp Seperate
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+; Additional source files.
+;
 $INCLUDE(loco.a51)
 $INCLUDE(tic.a51)
-
+$INCLUDE(adc.a51)
 
 
 END

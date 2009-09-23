@@ -7,6 +7,15 @@
 ;
 
 
+; Locomotion states.
+;
+LOCO_STOP     EQU 0
+LOCO_DRIVE_F  EQU 1
+LOCO_DRIVE_R  EQU 2
+LOCO_SPIN_L   EQU 3
+LOCO_SPIN_R   EQU 4
+
+
 ; Initialize the locomotion system.
 ;
 ; Takes:
@@ -44,9 +53,6 @@
 ;
 ; Mangles:
 ;   Nothing
-;
-; Notes:
-;   See loco.inc for available states.
 ;
   locoState:
     push ACC
