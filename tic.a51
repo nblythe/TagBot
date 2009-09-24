@@ -2,7 +2,7 @@
 ; 2009 Nathan Blythe
 ;
 ; Public routines:
-;   ticStart:  Start the TIC counting for a certain number of seconds.
+;   ticStart:  Start the TIC counting for a certain number of ticks.
 ;   ticStop:   Stop the TIC counter, whatever it's doing.
 ;   ticISR:    TIC interrupt service routine.
 ;
@@ -25,10 +25,11 @@ BSEG
 CSEG
 
 
-; Start the TIC counting for a certain number of seconds.
+; Start the TIC counting for a certain number of ticks.
 ;
 ; Takes:
-;   A: number of seconds the TIC should count.
+;   A: number of ticks the TIC should count.
+;   B: 0 = tick in 128ths of seconds; 1 = tick in seconds.
 ;
 ; Returns:
 ;   Nothing
@@ -37,7 +38,6 @@ CSEG
 ;   Nothing
 ;
 ; Notes:
-;   "Seconds" are used as the interval timebase.
 ;   Single-shot timer (no auto-restart).
 ;
 ;   See page 55 in the documentation.
@@ -67,9 +67,13 @@ CSEG
   ;
     clr ticTock
 
-  ; Enable the TIC.
+  ; Enable the TIC with the proper timebase.
   ;
-    mov TIMECON, #00010011b
+    mov A, #00000011b
+    jnb B.0, ticStart_Ready
+    mov A, #00010011b
+  ticStart_Ready:
+    mov TIMECON, A
     call ticSafety
 
   ; All done.

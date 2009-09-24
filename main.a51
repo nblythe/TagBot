@@ -2,7 +2,7 @@
 ; 2009 Nathan Blythe
 ;
 ; Overview:
-;   TODO
+;   TODOTOD
 ;
 
 
@@ -11,10 +11,14 @@ $INCLUDE (ADuC841.mcu)
 
 ; Configuration constants.
 ;
-DRIVE_TIME    EQU 5
-SCAN_TIME     EQU 2
-SCAN_THRESH   EQU 0A0H
-SCAN_DELTA    EQU 020H
+DRIVE_TIME      EQU 5
+DRIVE_TIMEBASE  EQU 1
+SCAN_TIME       EQU 2
+SCAN_TIMEBASE   EQU 1
+SCAN_THRESH     EQU 0A0H
+SCAN_DELTA      EQU 020H
+DETECT_TIME     EQU 10
+DETECT_TIMEBASE EQU 0
 
 
 ; State variables.
@@ -22,10 +26,10 @@ SCAN_DELTA    EQU 020H
 BSEG
   flagMode:    dbit 1
 DSEG
-  StateL:      ds   1
-  StateH:      ds   1
-  State_adc0:  ds   1
-  State_adc1:  ds   1
+  ;StateL:      ds   1
+  ;StateH:      ds   1
+  ;State_adc0:  ds   1
+  ;State_adc1:  ds   1
 
 
 ; Interrupt vector table.
@@ -97,6 +101,7 @@ CSEG at 00000H
   ; Start the timer.
   ;
     mov A, #DRIVE_TIME
+    mov B, #DRIVE_TIMEBASE
     call ticStart
 
   ; Wait until either the time expires or a collision
@@ -165,8 +170,11 @@ CSEG at 00000H
   ; TODO: collisions!
   ;
   Scan_Loop:
+    push B
     mov A, #SCAN_TIME
+    mov B, #SCAN_TIMEBASE
     call ticStart
+    pop B
   ;
   Scan_LoopWait:
     jb ticTock, Scan_LoopWaitTO
