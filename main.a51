@@ -17,8 +17,10 @@ SCAN_TIME       EQU 2
 SCAN_TIMEBASE   EQU 1
 SCAN_THRESH     EQU 0A0H
 SCAN_DELTA      EQU 020H
+DETECT_COUNT    EQU 20
 DETECT_TIME     EQU 10
 DETECT_TIMEBASE EQU 0
+DETECT_THRESH   EQU 080H
 
 
 ; State variables.
@@ -210,7 +212,100 @@ CSEG at 00000H
 ; TODO
 ;
   BusDetect:
-    sjmp BusDetect
+  ; Initialize the loop counter.
+  ;
+    mov B, #DETECT_COUNT
+
+  ; Top of detection loop.
+  ;
+  BusDetect_Loop:
+    push ACC
+
+  ; Prepare the TIC for a read cycle.
+  ;
+    mov A, #DETECT_TIME
+    mov B, #DETECT_TIMEBASE
+    call ticStart
+
+  ; Switch the bus to read mode.
+  ;
+  ; TODO
+
+  ; Read from the bus until we time out or detect
+  ; someone.
+  ;
+  BusDetect_LoopR:
+  ; Timed out?
+  ;
+    jb ticTock, BusDetect_toLoopR
+  ;
+  ; Found a defensive player?
+  ;
+    mov A, #ADC_COL_DEFENSIVE
+    call adcStart
+  BusDetect_LoopR_adcDef:
+    jnb adcValid, BusDetect_LoopR_adcDef
+    mov A, adcValue
+    clr C
+    subb A, #DETECT_THRESH
+    jc BusDetect_foundDef
+  ;
+  ; Found an offensive player?
+  ;
+    mov A, #ADC_COL_OFFENSIVE
+    call adcStart
+  BusDetect_LoopR_adcOff:
+    jnb adcValid, BusDetect_LoopR_adcOff
+    mov A, adcValue
+    clr C
+    subb A, #DETECT_THRESH
+    jc BusDetect_foundOff
+  ;
+    sjmp BusDetect_LoopR
+  BusDetect_toLoopR:
+
+  ; Prepare the TIC for a write cycle.
+  ;
+    mov A, #DETECT_TIME
+    mov B, #DETECT_TIMEBASE
+    call ticStart
+
+  ; Switch the bus to write mode.
+  ;
+  ; TODO
+  ;
+
+  ; Write to the bus until we time out.
+  ;
+  BusDetect_LoopW:
+    jnb ticTock, BusDetect_LoopW
+
+  ; Rinse, wash, repeat!
+  ;
+    pop B
+    djnz B, BusDetect_Loop
+
+  ; Done looping; didn't find anyone.  We must have
+  ; collided with an obstacle.  Switch to the "Seperate"
+  ; state.
+  ;
+    ljmp Seperate
+
+  ; Found a defensive player.  Change mode to defensive
+  ; and switch to the "Seperate" state.
+  ;
+  BusDetect_foundDef:
+    pop B
+    setb flagMode
+    ljmp Seperate
+
+  ; Found an offensive player.  Change mode to offensive
+  ; and switch to the "Seperate" state.
+  ;
+  BusDetect_foundOff:
+    pop B
+    clr flagMode
+    ljmp Seperate
 
 
 ; "Seperate" state
