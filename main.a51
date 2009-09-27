@@ -11,27 +11,23 @@ $INCLUDE (ADuC841.mcu)
 
 ; Configuration constants.
 ;
-DRIVE_TIME      EQU 5
-DRIVE_TIMEBASE  EQU 1
-SCAN_TIME       EQU 2
-SCAN_TIMEBASE   EQU 1
-SCAN_THRESH     EQU 0A0H
-SCAN_DELTA      EQU 020H
-DETECT_COUNT    EQU 20
-DETECT_TIME     EQU 10
-DETECT_TIMEBASE EQU 0
-DETECT_THRESH   EQU 080H
+DRIVE_TIME      EQU 5     ; Duration of drive state.
+DRIVE_TIMEBASE  EQU 1     ; Timebase for DRIVE_TIME.
+SCAN_TIME       EQU 2     ; Duration of a single scan loop.
+SCAN_TIMEBASE   EQU 1     ; Timebase for SCAN_TIME.
+SCAN_THRESH     EQU 0A0H  ; Initial scan threshold.
+SCAN_DELTA      EQU 020H  ; Scan threshold decrease per loop.
+DETECT_COUNT    EQU 20    ; Maximum number of bus detection loops.
+DETECT_TIME     EQU 10    ; Duration of bus detection read/write cycles.
+DETECT_TIMEBASE EQU 0     ; Timebase for DETECT_TIME.
+DETECT_THRESH   EQU 080H  ; Bus detection threshold.
 
 
 ; State variables.
 ;
 BSEG
   flagMode:    dbit 1
-DSEG
-  ;StateL:      ds   1
-  ;StateH:      ds   1
-  ;State_adc0:  ds   1
-  ;State_adc1:  ds   1
+  flagCol:     dbit 1
 
 
 ; Interrupt vector table.
@@ -42,7 +38,7 @@ CSEG at 00000H
     ds   5
     ljmp Stub             ; Timer 0
     ds   5
-    ljmp Stub             ; External interrupt 1
+    ljmp colISR           ; External interrupt 1
     ds   5
     ljmp Stub             ; Timer 1
     ds   5
@@ -74,6 +70,10 @@ CSEG at 00000H
     mov IE,    #11000000b
     mov IEIP2, #00000100b
 
+  ; Collision flag starts out clear.
+  ;
+    clr flagCol
+
   ; TODO - init mode from GPIO.
   ;
     clr flagMode
@@ -83,14 +83,36 @@ CSEG at 00000H
     call locoInit
     call adcInit
 
+  ;  mov A, #LOCO_STOP
+  ;  call locoState
+  ;t:
+  ;  sjmp t
+
   ; Start in scan state.
   ;
     ljmp Scan
 
 
+; Collision ISR.
+;
+; Takes:
+;   Nothing
+;
+; Returns:
+;   Nothing
+;
+; Mangles:
+;   Nothing
+;
+  colISR:
+    setb flagCol
+    reti
+
+
 ; "Drive" state
 ;
   Drive:
+    clr P3.4
   ; Offensive: drive forwards.
   ; Defensive: drive reverse.
   ;
@@ -107,12 +129,11 @@ CSEG at 00000H
     call ticStart
 
   ; Wait until either the time expires or a collision
-  ; occurs.  TODO
+  ; occurs.
   ;
-    ;clr State_colFlag
   Drive_Wait:
     jb ticTock, Drive_Done
-    ;jb State_colFlag, Drive_Collision
+    ;jb flagCol, Drive_Collision
     sjmp Drive_Wait
 
   ; Time expired.  Stop the drive motor and switch
@@ -121,6 +142,7 @@ CSEG at 00000H
   Drive_Done:
     mov A, #LOCO_STOP
     call locoState
+    setb P3.4
     ljmp Scan
 
   ; Interrupted by a collision.  Stop the drive motor,
@@ -136,8 +158,6 @@ CSEG at 00000H
 ; "Scan" state
 ;
   Scan:
-    clr P3.4
-
   ; Initialize the threshold scan value.
   ;
     mov B, #SCAN_THRESH
@@ -167,9 +187,7 @@ CSEG at 00000H
   ; watch the scan values while we wait for it to finish.
   ; If the scan value exceeds the threshold we stop.  If
   ; the timer runs out we decrease the threshold and try
-  ; again.
-  ;
-  ; TODO: collisions!
+  ; again.  If a collision occurs we stop.
   ;
   Scan_Loop:
     push B
@@ -180,6 +198,7 @@ CSEG at 00000H
   ;
   Scan_LoopWait:
     jb ticTock, Scan_LoopWaitTO
+    jb flagcol, Scan_Col
   ;
     mov A, adcValue
     clr C
@@ -206,10 +225,17 @@ CSEG at 00000H
     call ticStop
     ljmp Drive
 
+  ; Scan interrupted by a collision.  Stop turning,
+  ; stop the timer, and switch to the "Bus Detect" state.
+  ;
+  Scan_Col:
+    mov A, #LOCO_STOP
+    call locoState
+    call ticStop
+    ljmp BusDetect
+
 
 ; "Bus Detect" state
-;
-; TODO
 ;
   BusDetect:
   ; Initialize the loop counter.
@@ -310,7 +336,9 @@ CSEG at 00000H
 
 ; "Seperate" state
 ;
-; TODO
+; Drive away from the collision and ensure that we
+; seperated enough that the collision flag can be safely
+; cleared.  This will sort of a randomly "run away" routine.
 ;
   Seperate:
     sjmp Seperate

@@ -19,6 +19,13 @@ LOCO_SPIN_L   EQU 3
 LOCO_SPIN_R   EQU 4
 
 
+; PWM values for servo speeds.
+;
+SPEED_R       EQU 012H
+SPEED_STOP    EQU 015H
+SPEED_F       EQU 018H
+
+
 ; Initialize the locomotion system.
 ;
 ; Takes:
@@ -38,11 +45,12 @@ LOCO_SPIN_R   EQU 4
 ;   See page 43 of the documentation.
 ;
   locoInit:
+    ;mov CFG841, 
     mov PWM1L, #255         ; Period of both PWMs.
     mov PWM1H, #000H        ; Offset of PWM1's rising edge (PWM0 rises at 0).
     mov PWM0L, #000H        ; PWM0 has initial duty cycle 0.
     mov PWM0H, #000H        ; PWM1 has initial duty cycle 0.
-    mov PWMCON, #00101111b  ; Mode 2, clock is fosc / 64.
+    mov PWMCON, #00100001b  ; Mode 2, clock is fosc / 64.
     ret
 
 
@@ -76,32 +84,32 @@ LOCO_SPIN_R   EQU 4
 
   ; Both motors stopped.
   ;
-    mov PWM0L, #080H
-    mov PWM0H, #080H
+    mov PWM0L, #SPEED_STOP
+    mov PWM0H, #SPEED_STOP
     sjmp locoState_Done
 
   ; Heading motor stopped, drive motor forwards.
   ;
-    mov PWM0L, #080H
-    mov PWM0H, #0FFH
+    mov PWM0L, #SPEED_STOP
+    mov PWM0H, #SPEED_F
     sjmp locoState_Done
 
   ; Heading motor stopped, drive motor reverse.
   ;
-    mov PWM0L, #080H
-    mov PWM0H, #000H
+    mov PWM0L, #SPEED_STOP
+    mov PWM0H, #SPEED_R
     sjmp locoState_Done
 
   ; Heading motor forwards, drive motor stopped.
   ;
-    mov PWM0L, #0FFH
-    mov PWM0H, #080H
+    mov PWM0L, #SPEED_F
+    mov PWM0H, #SPEED_STOP
     sjmp locoState_Done
 
   ; Heading motor reverse, drive motor stopped.
   ;
-    mov PWM0L, #000H
-    mov PWM0H, #080H
+    mov PWM0L, #SPEED_R
+    mov PWM0H, #SPEED_STOP
     sjmp locoState_Done
  
   ; All done.
