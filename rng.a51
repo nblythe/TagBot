@@ -26,6 +26,15 @@ RNG_C_0 EQU 05FH
 ;
 DSEG
   rngState: ds 4
+  rngTemp0: ds 4
+  rngTemp1: ds 4
+  rngTemp2: ds 4
+  rngTemp3: ds 4
+
+
+; Routines follow.
+;
+CSEG
 
 
 ; Initialize the RNG.
@@ -103,6 +112,7 @@ DSEG
   ; Point R1 to the state.
   ; Carry byte initially 0.
   ; Count initially at 4.
+  ;
     mov R1, #rngState
     mov R2, #0
     mov B, #4
@@ -134,11 +144,6 @@ DSEG
     pop B
     djnz B, rngMulB_Loop
 
-  ; Store the final carry byte.
-  ;
-    mov A, R2
-    mov @R0, A
-
   ; All done, unroll and return.
   ;
     pop ACC
@@ -164,7 +169,88 @@ DSEG
 ;   A
 ;
   rngMul:
-  ; Multiply low byte
+    push B
+    mov A, R0
+    push ACC
+
+  ; A.0 * State -> Temp0
+  ;
+    mov R0, #rngTemp0
+    mov A, RNG_A_0
+    call rngMulB
+
+  ; A.1 * State -> Temp1
+  ;
+    mov R0, #rngTemp1
+    mov A, RNG_A_1
+    call rngMulB
+
+  ; A.2 * State -> Temp2
+  ;
+    mov R0, #rngTemp2
+    mov A, RNG_A_2
+    call rngMulB
+
+  ; A.3 * State -> Temp3
+  ;
+    mov R0, #rngTemp3
+    mov A, RNG_A_3
+    call rngMulB
+
+  ; Temp0.0 -> State.0
+  ;
+    mov A, rngTemp0 + 0
+    mov rngState + 0, A
+
+  ; Temp0.1 + Temp1.0 -> State.1
+  ;
+    mov A, rngTemp0 + 1
+    mov B, rngTemp1 + 0
+    add A, B
+    mov rngState + 1, A
+
+  ; C + Temp0.2 + Temp1.1 + Temp2.0 -> State.2
+  ;
+    mov A, rngTemp0 + 2
+    mov B, rngTemp1 + 1
+    addc A, B
+    mov B, rngTemp2 + 0
+    addc A, B
+    mov rngState + 2, A
+
+  ; C + Temp0.3 + Temp1.2 + Temp2.1 + Temp3.0 -> State.3
+  ;
+    mov A, rngTemp0 + 3
+    mov B, rngTemp1 + 2
+    addc A, B
+    mov B, rngTemp2 + 1
+    addc A, B
+    mov B, rngTemp3 + 0
+    addc A, B
+    mov rngState + 3, A
+
+  ; All done.
+  ;
+    pop ACC
+    mov R0, A
+    pop B
+    ret
 
 
+; Retrieve the next RNG value.
+;
+; Takes:
+;   Nothing
+;
+; Returns:
+;   A: pseudo-random value
+;
+; Mangles:
+;   Nothing
+;
+  rngGet:
+    call rngMul
+    call rngAdd
+    mov A, rngState + 3
+    ret
 

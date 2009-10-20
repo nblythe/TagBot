@@ -9,6 +9,12 @@ $NOMOD51
 $NOLIST
 
 
+; Block data allocation around registers.
+;
+DSEG AT 00H
+            ds 32
+
+
 ; Special function registers.
 ;
 P0          DATA      080H  ; Port 0.  Default value 0xFF.  Bit addressable.

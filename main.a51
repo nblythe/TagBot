@@ -89,6 +89,7 @@ CSEG at 00000H
   ;
     call locoInit
     call adcInit
+    call rngInit
 
   ; TODO
   ;
@@ -369,35 +370,66 @@ CSEG at 00000H
 
   BugBot_Loop:
 
-  ; Front switch hit.  Drive backward.
+  ; Front switch hit.  Drive backward, turn randomly,
+  ; drive forward.
   ;
-    jb PIN_CFRONT, BugBot_Poll_notFront
+    jb PIN_CFRONT, BugBot_Loop_notFront
+  ;
     mov A, #LOCO_DRIVE_R
     call locoState
-  BugBot_Poll_notFront:
+  ;
+    mov A, #3
+    mov B, #1
+    call ticStart
+  BugBot_Loop_frontWait0:
+    jnb ticTock, BugBot_Loop_frontWait0
+  ;
+    call rngGet
+    mov B, A
+    mov A, #LOCO_SPIN_R
+    jnb B.0, BugBot_Loop_frontTurn
+    mov A, #LOCO_SPIN_L
+  BugBot_Loop_frontTurn:
+    call locoState
+  ;
+    mov A, #2
+    mov B, #1
+    call ticStart
+  BugBot_Loop_frontWait1:
+    jnb ticTock, BugBot_Loop_frontWait1
+  ;
+    mov A, #LOCO_DRIVE_F
+    call locoState
+    sjmp BugBot_Loop
+  BugBot_Loop_notFront:
+
 
   ; Right switch hit.  Turn left.
   ;
   ; TODO
   ;
-    jb PIN_CRIGHT, BugBot_Poll_notRight
-  BugBot_Poll_notRight:
+  ;  jb PIN_CRIGHT, BugBot_Loop_notRight
+  ;BugBot_Loop_notRight:
+
 
   ; Left switch hit.  Turn right.
   ;
   ; TODO
   ;
-    jb PIN_CLEFT, BugBot_Poll_notLeft
-  BugBot_Poll_notLeft:
+  ;  jb PIN_CLEFT, BugBot_Loop_notLeft
+  ;BugBot_Loop_notLeft:
+
 
   ; Rear switch hit.  Drive forwards.
   ;
-    jb PIN_CREAR, BugBot_Poll_notRear
-    mov A, #LOCO_DRIVE_F
-    call locoState
-  BugBot_Poll_notRear:
+  ;  jb PIN_CREAR, BugBot_Loop_notRear
+  ;BugBot_Loop_notRear:
 
+
+  ; Nothing: keep doing whatever it is we're doing.
+  ;
     sjmp BugBot_Loop
+
 
 ; Additional source files.
 ;
