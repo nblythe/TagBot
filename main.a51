@@ -2,7 +2,7 @@
 ; 2009 Nathan Blythe
 ;
 ; Overview:
-;   TODOTOD
+;   TODO
 ;
 
 
@@ -22,6 +22,13 @@ DETECT_TIME     EQU 10    ; Duration of bus detection read/write cycles.
 DETECT_TIMEBASE EQU 0     ; Timebase for DETECT_TIME.
 DETECT_THRESH   EQU 080H  ; Bus detection threshold.
 
+
+; Pin configurations.
+;
+PIN_CREAR       EQU P2.0
+PIN_CRIGHT      EQU P2.1
+PIN_CLEFT       EQU P2.2
+PIN_CFRONT      EQU P2.3
 
 ; State variables.
 ;
@@ -82,6 +89,10 @@ CSEG at 00000H
   ;
     call locoInit
     call adcInit
+
+  ; TODO
+  ;
+    ljmp BugBot
 
   ;  mov A, #LOCO_STOP
   ;  call locoState
@@ -344,11 +355,56 @@ CSEG at 00000H
     sjmp Seperate
 
 
+; "Bug bot" state
+;
+; Drive forward until a collision is detected.  When
+; there's a collision, drive backwards a bit, turn
+; randomly and drive forwards again.
+;
+  BugBot:
+  ; Start out stopped.
+  ;
+    mov A, #LOCO_STOP
+    call locoState
+
+  BugBot_Loop:
+
+  ; Front switch hit.  Drive backward.
+  ;
+    jb PIN_CFRONT, BugBot_Poll_notFront
+    mov A, #LOCO_DRIVE_R
+    call locoState
+  BugBot_Poll_notFront:
+
+  ; Right switch hit.  Turn left.
+  ;
+  ; TODO
+  ;
+    jb PIN_CRIGHT, BugBot_Poll_notRight
+  BugBot_Poll_notRight:
+
+  ; Left switch hit.  Turn right.
+  ;
+  ; TODO
+  ;
+    jb PIN_CLEFT, BugBot_Poll_notLeft
+  BugBot_Poll_notLeft:
+
+  ; Rear switch hit.  Drive forwards.
+  ;
+    jb PIN_CREAR, BugBot_Poll_notRear
+    mov A, #LOCO_DRIVE_F
+    call locoState
+  BugBot_Poll_notRear:
+
+    sjmp BugBot_Loop
+
 ; Additional source files.
 ;
 $INCLUDE(loco.a51)
 $INCLUDE(tic.a51)
 $INCLUDE(adc.a51)
+$INCLUDE(rng.a51)
 
 
 END
