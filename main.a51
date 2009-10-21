@@ -371,7 +371,7 @@ CSEG at 00000H
   BugBot_Loop:
 
   ; Front switch hit.  Drive backward, turn randomly,
-  ; drive forward.
+  ; drive backward.
   ;
     jb PIN_CFRONT, BugBot_Loop_notFront
   ;
@@ -398,37 +398,99 @@ CSEG at 00000H
   BugBot_Loop_frontWait1:
     jnb ticTock, BugBot_Loop_frontWait1
   ;
-    mov A, #LOCO_DRIVE_F
+    mov A, #LOCO_DRIVE_R
     call locoState
-    sjmp BugBot_Loop
+    ljmp BugBot_Loop
   BugBot_Loop_notFront:
 
 
-  ; Right switch hit.  Turn left.
+  ; Right switch hit.  Turn left, drive forward
+  ; or reverse randomly.
   ;
-  ; TODO
+    jb PIN_CRIGHT, BugBot_Loop_notRight
   ;
-  ;  jb PIN_CRIGHT, BugBot_Loop_notRight
-  ;BugBot_Loop_notRight:
+    mov A, #LOCO_SPIN_L
+    call locoState
+  ;
+    mov A, #2
+    mov B, #1
+    call ticStart
+  BugBot_Loop_rightWait0:
+    jnb ticTock, BugBot_Loop_rightWait0
+  ;
+    call rngGet
+    mov B, A
+    mov A, #LOCO_DRIVE_F
+    jnb B.0, BugBot_Loop_rightDrive
+    mov A, #LOCO_DRIVE_R
+  BugBot_Loop_rightDrive:
+    call locoState
+    ljmp BugBot_Loop
+  BugBot_Loop_notRight:
 
 
-  ; Left switch hit.  Turn right.
+  ; Left switch hit.  Turn right, drive forward or
+  ; reverse randomly.
   ;
-  ; TODO
+    jb PIN_CLEFT, BugBot_Loop_notLeft
   ;
-  ;  jb PIN_CLEFT, BugBot_Loop_notLeft
-  ;BugBot_Loop_notLeft:
+    mov A, #LOCO_SPIN_R
+    call locoState
+  ;
+    mov A, #2
+    mov B, #1
+    call ticStart
+  BugBot_Loop_leftWait0:
+    jnb ticTock, BugBot_Loop_leftWait0
+  ;
+    call rngGet
+    mov B, A
+    mov A, #LOCO_DRIVE_F
+    jnb B.0, BugBot_Loop_leftDrive
+    mov A, #LOCO_DRIVE_R
+  BugBot_Loop_leftDrive:
+    call locoState
+    ljmp BugBot_Loop
+  BugBot_Loop_notLeft:
 
 
-  ; Rear switch hit.  Drive forwards.
+  ; Rear switch hit.  Drive forward, turn randomly,
+  ; drive forward.
   ;
-  ;  jb PIN_CREAR, BugBot_Loop_notRear
-  ;BugBot_Loop_notRear:
+    jb PIN_CREAR, BugBot_Loop_notRear
+  ;
+    mov A, #LOCO_DRIVE_F
+    call locoState
+  ;
+    mov A, #3
+    mov B, #1
+    call ticStart
+  BugBot_Loop_rearWait0:
+    jnb ticTock, BugBot_Loop_rearWait0
+  ;
+    call rngGet
+    mov B, A
+    mov A, #LOCO_SPIN_R
+    jnb B.0, BugBot_Loop_rearTurn
+    mov A, #LOCO_SPIN_L
+  BugBot_Loop_rearTurn:
+    call locoState
+  ;
+    mov A, #2
+    mov B, #1
+    call ticStart
+  BugBot_Loop_rearWait1:
+    jnb ticTock, BugBot_Loop_rearWait1
+  ;
+    mov A, #LOCO_DRIVE_F
+    call locoState
+    ljmp BugBot_Loop
+  BugBot_Loop_notRear:
 
 
   ; Nothing: keep doing whatever it is we're doing.
   ;
-    sjmp BugBot_Loop
+    ljmp BugBot_Loop
 
 
 ; Additional source files.
